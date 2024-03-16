@@ -6,12 +6,14 @@ From the british game show "Countdown", or "Des chiffres et des lettres" in fran
 
 This is a brute force recursive algorithm used to solve a problem involving N integers and a target number, where you're trying to find all possible arrangements of these integers with combinations of arithmetic operations (-, +, \*, /) to reach the target number or a number close to it.
 
-It is a good example of exhaustive search and backtracking algorithms, suitable for classroom exercises. However, due to the exponential growth of the search space with the input size and the absence of specific pruning strategies to expedite the search, it is not recommended for problems involving more than 6 integers and a target. For larger problems, one may consider using the `-f` option and possibly modifying the code to employ a faster search strategy. This last resort could allow for solving larger instances within a reasonable time frame, although it may not necessarily guarantee finding the solution with the minimum number of operations.
+It is a example of exhaustive search and backtracking algorithms, suitable for classroom exercises. However, due to the exponential growth of the search space with the input size and the absence of specific pruning strategies to expedite the search, it is not recommended for problems involving more than 6 integers and a target. For larger problems, one may consider using the `-f` option and possibly modifying the code to employ a faster search strategy. This last resort could allow for solving larger instances within a reasonable time frame, although it may not necessarily guarantee finding the solution with the minimum number of operations.
 
 
 ## Algorithm
 
 Given N integers and a target number, recursively try all arrangements of 2 to N number assorted with all possible combinations of the four operations -, +, \* and /.
+
+## Usage
 
 ```
 ./lceb [-f] 134 int1 ... intN
