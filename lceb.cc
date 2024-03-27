@@ -7,137 +7,105 @@
 #include<format>
 
 using op = std::variant<long,char> ;
+using expression = std::vector<op>;
+using stack = std::vector<long> ;
+using numbers = std::vector<std::tuple<long,bool>>;
 
-const std::array<char,4> ops{'+','-','*','/'} ;
+struct Status {
+	long target{};
+	long best{};
+	size_t best_n{};
+	bool fast{};
+	expression postfix_expression{};
+	stack postfix_stack{};
+	numbers number_list;
 
-struct Stack {
-	using stack = std::vector<long> ;
-	using equtn = std::vector<op>;
-
-	equtn equtn_{};
-	stack stack_{};
-
-	long target_{};
-	long best_{};
-	size_t best_n_{};
-	bool fast_{};
-
-	Stack(long target, bool fast) : target_{target}, best_{target}, fast_{fast} {}
-
-	std::tuple<long,bool> update(const op& v_op) {
-		if (const char* v = std::get_if<char>(&v_op)) {
-			if (size() < 2) {
-				print(std::cout);
-				std::cout << std::endl;
-				throw std::runtime_error("stack has too few elements");
-			}
-			long a = stack_.back();
-			stack_.pop_back();
-			long b = stack_.back();
-			stack_.pop_back();
-			switch(*v) {
-				case '+':
-					
-					stack_.push_back(b+a);
-					return {b+a,true} ;
-				case '-':
-					stack_.push_back(b-a);
-					return {b-a,true} ;
-				case '*':
-					stack_.push_back(b*a);
-					return {b*a,true} ;
-				case '/':
-					{
-						long c = b / a ;
-						if (b % a != 0) {
-							stack_.push_back(b);
-							stack_.push_back(a);
-							return {0,false};
-						}
-						stack_.push_back(c);
-						return {c,true};
-					}
-					break;
-				default:
-					throw std::runtime_error("invalid operator");
-			};
-		} else {
-			stack_.push_back(std::get<long>(v_op));
-			return {0,true};
-		}
-	}
-
-	auto push(const op& v_op) {
-		// push new value or operator and if operator execute it if it can.
-		auto v = update(v_op);
-		if (std::get<bool>(v)) {
-			equtn_.push_back(v_op);
-		}
-		return v ;
-	}
-
-	void pop() {
-		// pop last value or operator and recalculate the stack from scratch
-		equtn_.pop_back();
-		stack_.clear();
-		for(auto r = equtn_.begin(); r != equtn_.end(); ++r) {
-			update(*r);
-		}
-	}
+	Status(long pTarget, numbers& n, bool pFast) : target{pTarget}, best{pTarget}, number_list{n}, fast{pFast} {}
 
 	void print(std::ostream& out) const {
+		out << std::format("{0:6}", best) << ": " ;
 		out << '(' ;
-		for(auto r = equtn_.begin(); r != equtn_.end(); ++r) {
-			if (const char* v = std::get_if<char>(&(*r))) {
+		for(auto const r : postfix_expression) {
+			if (const char* v = std::get_if<char>(&r)) {
 				out << ' ' << *v ;	
 			} else {
-				out << ' ' << std::get<long>(*r) ;
+				out << ' ' << std::get<long>(r) ;
 			}
 		}
 		out << " )";
 	}
 
-	size_t size() const {
-		return stack_.size();
-	}
-
-	size_t num() const {
-		return equtn_.size();
-	}
-};
-
-std::ostream& operator << (std::ostream& os, const Stack& s) {
-	s.print(os) ;
-	return os ;
-}
-
-void solve(Stack& s, std::vector<std::tuple<long,bool>>& n) {
-	if (s.size() > 1) {
-		for(auto r = ops.begin(); r != ops.end(); r++) {
-			auto q = s.push(*r) ;
-			if (std::get<bool>(q)) {
-				if (auto d = std::labs(std::get<long>(q)-s.target_); d<s.best_ || d<=s.best_ && s.num() < s.best_n_) {
-					s.best_ = d ;
-					s.best_n_ = s.num() ;
-					//if (d < 100) {
-					std::cout << std::format("{0:6}", d) << ": " << s << std::endl;
-					//}
-					if (d == 0 && s.fast_) {
-						exit(0) ;
-					}
-				}
-				solve(s, n) ;
-				s.pop();
+	void progress(std::ostream& out) {
+		if (auto d = std::labs(postfix_stack.back()-target); d<best || d<=best && postfix_expression.size() < best_n) {
+			best = d ;
+			best_n = postfix_expression.size() ;
+			print(out);
+			out << '\n';
+			if (d == 0 && fast) {
+				exit(0) ;
 			}
 		}
 	}
-	for(auto r = n.begin(); r != n.end(); r++) {
+};
+
+std::ostream& operator<<(std::ostream& out, Status const& status) {
+	status.print(out);
+	out << std::endl ;
+	return out ;
+}
+
+void solve(Status& status) {
+	if (status.postfix_stack.size() > 1) {
+		auto a = status.postfix_stack.back();
+		status.postfix_stack.pop_back();
+		auto b = status.postfix_stack.back();
+		status.postfix_stack.pop_back();
+
+		status.postfix_stack.push_back(a+b);
+		status.postfix_expression.push_back('+');
+		status.progress(std::cout) ;
+		solve(status) ;
+		status.postfix_stack.pop_back();
+		status.postfix_expression.pop_back();
+
+		status.postfix_stack.push_back(a*b);
+		status.postfix_expression.push_back('*');
+		status.progress(std::cout) ;
+		solve(status) ;
+		status.postfix_stack.pop_back();
+		status.postfix_expression.pop_back();
+
+		if (a<b) {	
+			status.postfix_stack.push_back(b-a);
+			status.postfix_expression.push_back('-');
+			status.progress(std::cout) ;
+			solve(status) ;
+			status.postfix_stack.pop_back();
+			status.postfix_expression.pop_back();
+		}
+
+		if (b % a != 0) {
+			status.postfix_stack.push_back(b/a);
+			status.postfix_expression.push_back('/');
+			status.progress(std::cout) ;
+			solve(status) ;
+			status.postfix_stack.pop_back();
+			status.postfix_expression.pop_back();
+		}
+
+		status.postfix_stack.push_back(b);
+		status.postfix_stack.push_back(a);
+	}
+
+	for(auto r = status.number_list.begin(); r != status.number_list.end(); ++r) {
 		if (std::get<bool>(*r)) {
-			s.push(std::get<long>(*r)) ;
+			status.postfix_stack.push_back(std::get<long>(*r)) ;
+			status.postfix_expression.push_back(std::get<long>(*r));
 			std::get<bool>(*r) = false ;
-			solve(s, n);
+			solve(status);
 			std::get<bool>(*r) = true ;
-			s.pop();
+			status.postfix_stack.pop_back();
+			status.postfix_expression.pop_back();
 		}
 	}
 }
@@ -160,9 +128,9 @@ int main(int c, char const** v)
 		++i;
 	}
 
-	Stack s{std::atoi(v[i]),fast};
+	auto target = std::atoi(v[i]);
 
-	std::cout << "Obtain " << s.target_ << ", using" ;
+	std::cout << "Obtain " << target << ", using" ;
 
 	while(++i < c) {
 		n.push_back({std::atoi(v[i]),true});
@@ -171,5 +139,7 @@ int main(int c, char const** v)
 
  	std::cout << std::endl ;
 
-	solve(s, n);
+	Status s{target, n, fast};
+
+	solve(s);
 }
