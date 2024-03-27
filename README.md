@@ -34,7 +34,7 @@ Obtain 2341, using 5 6 25 9 3 4
 ```
 
 
-Note that it returns the expression in reverse polish (postfix) notation[1](https://en.wikipedia.org/wiki/Reverse_Polish_notation). Converting the last expression to the common infix notation gives `2341 = 5 * 6 * 3 * 4 - 25 * 9`.
+Note that it returns the expression in reverse polish (postfix) notation[1](https://en.wikipedia.org/wiki/Reverse_Polish_notation). Converting the last expression to the common infix notation gives `2341 = (5 * 6 * 3 + 4) * 25 - 9`.
 
 The first column is the absolute error. It is non-zero if the target cannot be found using the provided numbers. For instance, substituting _2346_ for the target in the previous example will find `2: ( 5 9 + 6 * 25 3 + * 4 - )` or _2348_ (error 2).
 
